@@ -1,0 +1,56 @@
+{% extends "sms_app/base.html" %}
+
+{% block title %}Send SMS{% endblock %}
+
+{% block content %}
+<div class="card shadow-sm">
+    <div class="card-body">
+        <h1 class="h4 mb-3">Send an SMS</h1>
+
+        <form method="post" novalidate>
+            {% csrf_token %}
+
+            <div class="mb-3">
+                <label for="{{ form.recipient.id_for_label }}" class="form-label">
+                    {{ form.recipient.label }}
+                </label>
+                {{ form.recipient }}
+                {% for error in form.recipient.errors %}
+                    <div class="text-danger small mt-1">{{ error }}</div>
+                {% endfor %}
+            </div>
+
+            <div class="mb-2">
+                <label for="{{ form.message.id_for_label }}" class="form-label">
+                    {{ form.message.label }}
+                </label>
+                {{ form.message }}
+                {% for error in form.message.errors %}
+                    <div class="text-danger small mt-1">{{ error }}</div>
+                {% endfor %}
+            </div>
+
+            <!-- Extra feature: live character counter -->
+            <div class="d-flex justify-content-end mb-3">
+                <small class="text-muted">
+                    <span id="char-count">0</span>/320 characters
+                </small>
+            </div>
+
+            <button type="submit" class="btn btn-primary w-100">Send SMS</button>
+        </form>
+    </div>
+</div>
+
+<script>
+    // Character counter for the message field.
+    (function () {
+        var box = document.getElementById("id_message");
+        var counter = document.getElementById("char-count");
+        if (!box || !counter) return;
+        function update() { counter.textContent = box.value.length; }
+        box.addEventListener("input", update);
+        update();
+    })();
+</script>
+{% endblock %}

@@ -12,8 +12,6 @@ A web application built with the Django framework that sends SMS messages throug
 |--------|----------------|
 | John Joseph Perez | Django project setup, views, URLs, application logic, User interface, forms, validation, user feedback, SMS provider integration, testing, documentation, demo |
 
-*(All members understand the complete application. Update the names above before submission.)*
-
 ## Main Features
 
 - SMS composition form: recipient phone number field, message field, and a Send button.

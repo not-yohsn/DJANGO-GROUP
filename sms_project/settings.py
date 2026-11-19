@@ -21,10 +21,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Load secrets from a local .env file (never committed to GitHub).
 load_dotenv(BASE_DIR / '.env')
 
-# Textbelt API key, read from an environment variable only.
-# The literal "textbelt" is the free tier (1 SMS per day); replace it in .env
-# with a paid key from https://textbelt.com for reliable sending.
-TEXTBELT_KEY = os.environ.get('TEXTBELT_KEY', 'textbelt')
+# TextBee SMS credentials, read from environment variables only.
+# TEXTBEE_DEVICE_ID is optional; if blank, your default device is used.
+TEXTBEE_API_KEY = os.environ.get('TEXTBEE_API_KEY', '')
+TEXTBEE_DEVICE_ID = os.environ.get('TEXTBEE_DEVICE_ID', '')
 
 
 # Quick-start development settings - unsuitable for production

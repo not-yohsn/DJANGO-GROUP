@@ -1,22 +1,23 @@
 """
-Thin wrapper around the Textbelt SMS API (https://textbelt.com).
+Thin wrapper around the TextBee SMS API (https://textbee.dev).
 
-The API key comes from Django settings (read from an environment variable),
-so no secret is ever hardcoded here. Every failure mode is caught and returned
-as a plain result object, so the view never crashes and never leaks details.
+TextBee sends through your own Android phone and SIM. Credentials come from
+Django settings (read from environment variables), so no secret is hardcoded.
+Every failure mode is caught and returned as a plain result object, so the view
+never crashes and never leaks details.
 
-Textbelt request:  POST https://textbelt.com/text  with phone, message, key
-Textbelt response: {"success": true, "textId": "...", "quotaRemaining": N}
-               or  {"success": false, "error": "..."}
+TextBee request:  POST https://api.textbee.dev/api/v1/gateway/send-sms
+                  header x-api-key, JSON body {recipients, message, deviceId?}
+TextBee response: {"data": {"success": true, "smsBatchId": "...", ...}}
 """
 
 import json
-import urllib.parse
+import urllib.error
 import urllib.request
 
 from django.conf import settings
 
-TEXTBELT_URL = "https://textbelt.com/text"
+TEXTBEE_URL = "https://api.textbee.dev/api/v1/gateway/send-sms"
 
 
 class SMSResult:
@@ -27,26 +28,33 @@ class SMSResult:
 
 
 def send_sms(recipient, body):
-    """Attempt to send an SMS through Textbelt. Returns an SMSResult, never raises."""
+    """Attempt to send an SMS through TextBee. Returns an SMSResult, never raises."""
 
     # Guard: missing API key.
-    if not settings.TEXTBELT_KEY:
+    if not settings.TEXTBEE_API_KEY:
         return SMSResult(
             success=False,
-            error="SMS service is not configured. Set TEXTBELT_KEY in the .env "
-                  "file before sending.",
+            error="SMS service is not configured. Set TEXTBEE_API_KEY in the "
+                  ".env file before sending.",
         )
 
-    data = urllib.parse.urlencode({
-        "phone": recipient,
-        "message": body,
-        "key": settings.TEXTBELT_KEY,
-    }).encode()
+    payload = {"recipients": [recipient], "message": body}
+    if settings.TEXTBEE_DEVICE_ID:
+        payload["deviceId"] = settings.TEXTBEE_DEVICE_ID
+
+    data = json.dumps(payload).encode()
+    headers = {
+        "x-api-key": settings.TEXTBEE_API_KEY,
+        "Content-Type": "application/json",
+    }
 
     try:
-        request = urllib.request.Request(TEXTBELT_URL, data=data)
+        request = urllib.request.Request(TEXTBEE_URL, data=data, headers=headers)
         with urllib.request.urlopen(request, timeout=20) as response:
-            payload = json.loads(response.read().decode())
+            result = json.loads(response.read().decode())
+    except urllib.error.HTTPError as exc:
+        # Provider rejected the request (no online device, out of quota, bad key).
+        return SMSResult(success=False, error=_extract_error(exc))
     except Exception:
         # Network error, timeout, or an unreadable response.
         return SMSResult(
@@ -55,13 +63,25 @@ def send_sms(recipient, body):
                   "and try again.",
         )
 
-    # A successful API call means the message was accepted for delivery,
-    # not that it was delivered. We report submission, not delivery.
-    if payload.get("success"):
-        return SMSResult(success=True, sid=str(payload.get("textId", "")))
+    # Success response nests the result under "data".
+    details = result.get("data", {}) if isinstance(result, dict) else {}
+    if details.get("success"):
+        # Accepted for delivery (submission, not confirmed delivery).
+        return SMSResult(success=True, sid=str(details.get("smsBatchId", "")))
 
-    # Provider rejected the request (bad number, out of quota, bad key, etc.).
     return SMSResult(
         success=False,
-        error=f"Provider error: {payload.get('error', 'message rejected')}",
+        error=details.get("message") or details.get("error") or "message rejected",
     )
+
+
+def _extract_error(http_error):
+    """Pull a readable message out of an HTTP error body, no secrets exposed."""
+    try:
+        body = json.loads(http_error.read().decode())
+        msg = body.get("error") or body.get("message")
+        if msg:
+            return f"Provider error: {msg}"
+    except Exception:
+        pass
+    return f"Provider error (HTTP {http_error.code})."

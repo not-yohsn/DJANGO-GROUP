@@ -9,9 +9,15 @@ from .sms_service import SMSResult
 
 
 class SMSFormTests(TestCase):
-    def test_valid_input(self):
+    def test_valid_local_number_is_normalized(self):
+        form = SMSForm(data={"recipient": "09171234567", "message": "Hello"})
+        self.assertTrue(form.is_valid())
+        self.assertEqual(form.cleaned_data["recipient"], "+639171234567")
+
+    def test_valid_international_number(self):
         form = SMSForm(data={"recipient": "+639171234567", "message": "Hello"})
         self.assertTrue(form.is_valid())
+        self.assertEqual(form.cleaned_data["recipient"], "+639171234567")
 
     def test_empty_recipient_is_rejected(self):
         form = SMSForm(data={"recipient": "", "message": "Hello"})
@@ -19,12 +25,12 @@ class SMSFormTests(TestCase):
         self.assertIn("recipient", form.errors)
 
     def test_empty_message_is_rejected(self):
-        form = SMSForm(data={"recipient": "+639171234567", "message": "   "})
+        form = SMSForm(data={"recipient": "09171234567", "message": "   "})
         self.assertFalse(form.is_valid())
         self.assertIn("message", form.errors)
 
     def test_invalid_phone_format_is_rejected(self):
-        form = SMSForm(data={"recipient": "09171234567", "message": "Hi"})
+        form = SMSForm(data={"recipient": "12345", "message": "Hi"})
         self.assertFalse(form.is_valid())
         self.assertIn("recipient", form.errors)
 
@@ -66,7 +72,7 @@ class SendViewTests(TestCase):
 class SMSServiceTests(TestCase):
     def test_missing_credentials_returns_failure(self):
         from .sms_service import send_sms
-        with self.settings(TEXTBELT_KEY=""):
+        with self.settings(TEXTBEE_API_KEY=""):
             result = send_sms("+639171234567", "Hi")
         self.assertFalse(result.success)
         self.assertIn("not configured", result.error)

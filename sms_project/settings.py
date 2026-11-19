@@ -21,10 +21,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Load secrets from a local .env file (never committed to GitHub).
 load_dotenv(BASE_DIR / '.env')
 
-# Twilio credentials, read from environment variables only.
-TWILIO_ACCOUNT_SID = os.environ.get('TWILIO_ACCOUNT_SID', '')
-TWILIO_AUTH_TOKEN = os.environ.get('TWILIO_AUTH_TOKEN', '')
-TWILIO_FROM_NUMBER = os.environ.get('TWILIO_FROM_NUMBER', '')
+# Textbelt API key, read from an environment variable only.
+# The literal "textbelt" is the free tier (1 SMS per day); replace it in .env
+# with a paid key from https://textbelt.com for reliable sending.
+TEXTBELT_KEY = os.environ.get('TEXTBELT_KEY', 'textbelt')
 
 
 # Quick-start development settings - unsuitable for production

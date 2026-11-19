@@ -66,8 +66,7 @@ class SendViewTests(TestCase):
 class SMSServiceTests(TestCase):
     def test_missing_credentials_returns_failure(self):
         from .sms_service import send_sms
-        with self.settings(TWILIO_ACCOUNT_SID="", TWILIO_AUTH_TOKEN="",
-                           TWILIO_FROM_NUMBER=""):
+        with self.settings(TEXTBELT_KEY=""):
             result = send_sms("+639171234567", "Hi")
         self.assertFalse(result.success)
         self.assertIn("not configured", result.error)

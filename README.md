@@ -10,9 +10,7 @@ A web application built with the Django framework that sends SMS messages throug
 
 | Member | Responsibility |
 |--------|----------------|
-| John Joseph Perez | Django project setup, views, URLs, application logic |
-| (Member 2 - fill in) | User interface, forms, validation, user feedback |
-| (Member 3 - fill in) | SMS provider integration, testing, documentation, demo |
+| John Joseph Perez | Django project setup, views, URLs, application logic, User interface, forms, validation, user feedback, SMS provider integration, testing, documentation, demo |
 
 *(All members understand the complete application. Update the names above before submission.)*
 
